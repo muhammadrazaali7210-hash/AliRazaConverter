@@ -1,2 +1,24 @@
-/*! coi-serviceworker v0.1.7 | MIT License | https://github.com/gzguidoti/coi-serviceworker */
-if(typeof window==="undefined"){self.addEventListener("install",()=>self.skipWaiting());self.addEventListener("activate",e=>e.waitUntil(self.clients.claim()));self.addEventListener("message",e=>{if(e.data&&e.data.type==="deregister"){self.registration.unregister().then(()=>self.clients.matchAll()).then(e=>{e.forEach(e=>e.navigate(e.url))})}});async function handleRequest(e){const t=e.request;if(t.cache==="only-if-cached"&&t.mode!=="same-origin")return;let r=await fetch(t);if(r.status===0)return r;const n=new Headers(r.headers);n.set("Cross-Origin-Opener-Policy","same-origin");n.set("Cross-Origin-Embedder-Policy","require-corp");return new Response(r.body,{status:r.status,statusText:r.statusText,headers:n})}self.addEventListener("fetch",e=>{e.respondWith(handleRequest(e).catch(e=>console.error(e)))})}else{(() => {const e=document.currentScript;if(e&&e.hasAttribute("data-coi-deregister")){if(navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(e=>{e.forEach(t=>{t.active&&t.active.scriptURL.includes("coi-serviceworker")&&t.messageChannels[0].port1.postMessage({type:"deregister"})})})}}else if(navigator.serviceWorker){navigator.serviceWorker.register(window.location.pathname+window.location.search).then(e=>{e.addEventListener("updatefound",()=>{window.location.reload()});if(e.active&&!navigator.serviceWorker.controller){window.location.reload()}})}})()}
+/*! coi-serviceworker v0.1.7 | MIT License | https://github.com/gzuidhof/coi-serviceworker */
+if (typeof window === 'undefined') {
+    self.addEventListener("install", () => self.skipWaiting());
+    self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+    self.addEventListener("fetch", (e) => {
+        if (e.request.cache === "only-if-cached" && e.request.mode !== "same-origin") return;
+        e.respondWith(
+            fetch(e.request).then((r) => {
+                if (r.status === 0) return r;
+                const h = new Headers(r.headers);
+                h.set("Cross-Origin-Embedder-Policy", "require-corp");
+                h.set("Cross-Origin-Opener-Policy", "same-origin");
+                return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
+            }).catch((err) => console.error(err))
+        );
+    });
+} else {
+    if (window.crossOriginIsolated === false && navigator.serviceWorker) {
+        navigator.serviceWorker.register(window.document.currentScript.src).then((reg) => {
+            reg.addEventListener("updatefound", () => location.reload());
+            if (reg.active) location.reload();
+        });
+    }
+}
