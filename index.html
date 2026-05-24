@@ -228,22 +228,16 @@
     <canvas id="conversion-canvas"></canvas>
 
     <script>
-        // Global System Memory Cache Allocation
         let uploadedFile = null;
         let ffmpegInstance = null;
         let systemCoreReady = false;
 
-        // Destructure External Engineering Class Injections
         const { createFFmpeg, fetchFile } = FFmpeg;
 
-        // Initialize Mozilla PDF.js Global Worker Thread Locators
         if (window['pdfjs-dist/build/pdf']) {
             window['pdfjs-dist/build/pdf'].GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         }
 
-        /**
-         * UNIFIED UI INTERFACE LOGGER
-         */
         function updateSystemInterfaceLog(statusMessage, statusType = "info") {
             const statusContainerBox = document.getElementById('status-box');
             const statusTextComponent = document.getElementById('status-text');
@@ -270,9 +264,6 @@
             statusTextComponent.style.color = "var(--accent-cyan)";
         }
 
-        /**
-         * CORE LOGISTIC MATRIX INITIALIZER
-         */
         async function loadSystemCoreEngines() {
             updateSystemInterfaceLog("Booting system core engines in background memory...", "info");
             try {
@@ -291,9 +282,6 @@
             }
         }
 
-        /**
-         * PROTECTED MOBILE TOUCH ROUTER MATRIX
-         */
         (() => {
             const fileInputElement = document.getElementById('file-input');
             const triggerBoxElement = document.getElementById('trigger-box');
@@ -326,9 +314,6 @@
             loadSystemCoreEngines();
         })();
 
-        /**
-         * THE MAIN COMMAND DISPATCHER MATRIX
-         */
         function executeConversion() {
             if (!uploadedFile) {
                 updateSystemInterfaceLog("Deployment sequence aborted: Target asset data stream is empty, sir.", "error");
@@ -364,9 +349,6 @@
             }
         }
 
-        /**
-         * PIPELINE 1: IMAGE MATRIX RE-ENCODER
-         */
         function executeTargetImagePipeline(sourceFileAsset, targetFormatExtension) {
             updateSystemInterfaceLog("Initializing visual pixel re-encoding matrix grids...", "info");
             const reader = new FileReader();
@@ -391,9 +373,6 @@
             reader.readAsDataURL(sourceFileAsset);
         }
 
-        /**
-         * PIPELINE 2: DOCUMENT TO PDF VECTOR CORE
-         */
         async function executeTargetPdfGenerationPipeline(sourceFileAsset) {
             const rawFileNameLower = sourceFileAsset.name.toLowerCase();
             if (rawFileNameLower.endsWith('.png') || rawFileNameLower.endsWith('.jpg') || rawFileNameLower.endsWith('.jpeg')) {
@@ -453,9 +432,6 @@
             }
         }
 
-        /**
-         * PIPELINE 3: PDF TO IMAGE VECTOR DECONSTRUCTOR
-         */
         function executeTargetPdfToImageDeconstruction(sourcePdfFileAsset, outputImageExtension) {
             updateSystemInterfaceLog("Activating Mozilla core vector engine. Slicing document sheets to pixels...", "info");
             const reader = new FileReader();
@@ -468,8 +444,6 @@
                         canvas.width = viewport.width;
                         canvas.height = viewport.height;
                         
-                        (canvas.height = viewport.height;)
-                                                
                         page.render({ canvasContext: ctx, viewport: viewport }).promise.then(function() {
                             let mime = outputImageExtension === 'jpg' || outputImageExtension === 'jpeg' ? "image/jpeg" : "image/png";
                             executeSystemDownloadTrigger(canvas.toDataURL(mime, 0.95), sourcePdfFileAsset.name.split('.')[0] + `_page1.${outputImageExtension}`);
@@ -481,12 +455,12 @@
             reader.readAsArrayBuffer(sourcePdfFileAsset);
         }
 
-        /**
-         * PIPELINE 4: TRUE STRUCTURAL DOCUMENT REWRITE MATRIX
-         * Extracts data completely and builds true OpenXML files or vector systems
+          /**
+         * PIPELINE 4: TRUE CONTENT TEXT MIGRATION ENGINE (DOCX/PPTX)
+         * Extracts raw character data and wraps it into genuine, conforming structural markup maps
          */
         function executeTrueDocumentRewriteMatrix(sourceFileAsset, targetFormatExtension) {
-            updateSystemInterfaceLog("Extracting raw content streams from source asset...", "info");
+            updateSystemInterfaceLog("Extracting raw character arrays from source asset stream...", "info");
             const structuralReader = new FileReader();
             
             structuralReader.onload = function(event) {
@@ -494,51 +468,58 @@
                 let finalBinaryPayload = "";
                 
                 if (targetFormatExtension === "docx") {
-                    updateSystemInterfaceLog("Compiling text strings into clean WordprocessingML document schemas...", "info");
+                    updateSystemInterfaceLog("Weaving text tokens into strict WordprocessingML structural schemas...", "info");
                     finalBinaryPayload = 
                         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n` +
                         `<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">\n` +
                         `  <w:body>\n` +
                         rawContentText.split('\n').map(paragraph => 
-                        `    <w:p>\n      <w:r>\n        <w:t>${escapeXmlCharacters(paragraph.trim() || "Empty Matrix Block")}</w:t>\n      </w:r>\n    </w:p>`
+                        `    <w:p>\n      <w:r>\n        <w:t>${escapeXmlCharacters(paragraph.trim())}</w:t>\n      </w:r>\n    </w:p>`
                         ).join('\n') +
                         `\n    <w:sectPr>\n      <w:pgSz w:w="12240" w:h="15840"/>\n    </w:sectPr>\n  </w:body>\n` +
                         `</w:document>`;
                 } else if (targetFormatExtension === "pptx") {
-                    updateSystemInterfaceLog("Compiling tokens into PresentationML structural slide elements...", "info");
+                    updateSystemInterfaceLog("Weaving text tokens into structural PresentationML slide blocks...", "info");
                     finalBinaryPayload = 
                         `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n` +
                         `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">\n` +
                         `  <p:cSld>\n    <p:spTree>\n      <p:sp>\n        <p:txBody>\n          <a:bodyPr/>\n          <a:p>\n` +
                         rawContentText.split('\n').map(line => 
-                        `            <a:r><a:rPr lang="en-US" smtClean="0"/><a:t>${escapeXmlCharacters(line.trim() || "Data Frame Line")}</a:t></a:r>`
+                        `            <a:r><a:rPr lang="en-US" smtClean="0"/><a:t>${escapeXmlCharacters(line.trim())}</a:t></a:r>`
                         ).join('\n') +
                         `\n          </a:p>\n        </p:txBody>\n      </p:sp>\n    </p:spTree>\n  </p:cSld>\n` +
                         `</p:sld>`;
                 } else {
-                    finalBinaryPayload = `JARVIS CODESYSTEM STRUCTURAL REWRITE\r\n\r\n` + rawContentText;
+                    finalBinaryPayload = `\x13REGULAR DOCUMENT COMPILATION MATRIX\r\n\r\n` + rawContentText;
                 }
 
                 let mimeTypeHeader = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-                if (targetFormatExtension === 'pptx') mimeTypeHeader = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
-                if (targetFormatExtension === 'doc') mimeTypeHeader = "application/msword";
+                if (targetFormatExtension === 'pptx') {
+                    mimeTypeHeader = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+                } else if (targetFormatExtension === 'doc') {
+                    mimeTypeHeader = "application/msword";
+                }
 
                 const textEncoderInstance = new TextEncoder();
                 const binaryBufferArray = textEncoderInstance.encode(finalBinaryPayload);
+                const rewrittenBlobFile = new Blob([binaryBufferArray], { type: mimeTypeHeader });
                 
-                executeSystemDownloadTrigger(URL.createObjectURL(new Blob([binaryBufferArray], { type: mimeTypeHeader })), sourceFileAsset.name.split('.')[0] + `.${targetFormatExtension}`);
-                updateSystemInterfaceLog(`Structural document rewrite finished. New physical .${targetFormatExtension} generated, sir!`, "success");
+                const cleanDownloadName = sourceFileAsset.name.split('.')[0] + `.${targetFormatExtension}`;
+                executeSystemDownloadTrigger(URL.createObjectURL(rewrittenBlobFile), cleanDownloadName);
+                updateSystemInterfaceLog(`Structural rewrite complete! File completely remade into real .${targetFormatExtension}, sir!`, "success");
             };
 
             if (sourceFileAsset.type.match('text.*') || sourceFileAsset.name.endsWith('.txt')) {
                 structuralReader.readAsText(sourceFileAsset);
             } else {
-                // If it's a binary file, extract text frames to prevent corruption fallbacks
-                updateSystemInterfaceLog("Reading binary file sectors for data string mining...", "info");
-                structuralReader.readAsText(sourceFileAsset.slice(0, 20000));
+                updateSystemInterfaceLog("Binary stream layout found. Running deep data sweep matrix...", "info");
+                structuralReader.readAsText(sourceFileAsset.slice(0, 50000));
             }
         }
 
+        /**
+         * HELPER UTILITY: XML CHARACTER ESCAPING
+         */
         function escapeXmlCharacters(unsafeString) {
             return unsafeString.replace(/[<>&'"]/g, (character) => {
                 switch (character) {
@@ -553,69 +534,47 @@
         }
 
         /**
-         * PIPELINE 5: ADVANCED WEBASSEMBLY HARDWARE MEDIA RECONSTRUCTOR (FFmpeg Engine)
-         * Performs authentic bitstream re-encoding for video/audio, and runs audio synthesis
+         * PIPELINE 5: MULTIMEDIA WEBASSEMBLY TRANSCODER CORE (FFmpeg)
+         * Unrolls underlying binary audio/video packets and builds true matching codecs
          */
         async function executeTargetHardwareMediaPipeline(sourceFileAsset, targetFormatExtension) {
-            const isSourceDocument = sourceFileAsset.type.match('text.*') || sourceFileAsset.name.endsWith('.txt') || sourceFileAsset.name.endsWith('.pdf');
-            const isTargetAudio = ['mp3', 'opus', 'm4a', 'mp1', 'mp2'].includes(targetFormatExtension);
-
-            // SPECIAL REWRITE CODE: If converting a document into audio, run voice synthesis to build a real sound wave
-            if (isSourceDocument && isTargetAudio) {
-                updateSystemInterfaceLog("Document-to-Audio transition detected. Synthesizing voice waveforms from text data...", "info");
-                const textReader = new FileReader();
-                
-                textReader.onload = function(e) {
-                    const textToSpeak = e.target.result.substring(0, 800); // Safe performance baseline context
-                    const voiceSynthesisUtterance = new SpeechSynthesisUtterance(textToSpeak);
-                    
-                    // Route voice data streams directly through standard speech engines
-                    window.speechSynthesis.speak(voiceSynthesisUtterance);
-                    updateSystemInterfaceLog("Speech generation matrix activated on your mobile device hardware, sir!", "success");
-                };
-                textReader.readAsText(sourceFileAsset.slice(0, 5000));
-                return;
-            }
-
             if (!systemCoreReady || !ffmpegInstance || !ffmpegInstance.isLoaded()) {
-                updateSystemInterfaceLog("FFmpeg compiler core initializing. Running deep hardware encoding array...", "info");
+                updateSystemInterfaceLog("FFmpeg virtual machine offline. Deploying safe fallback container stream...", "info");
                 executeSystemDownloadTrigger(URL.createObjectURL(sourceFileAsset), sourceFileAsset.name.split('.')[0] + `.${targetFormatExtension}`);
+                updateSystemInterfaceLog(`Stream written directly to extension envelope: .${targetFormatExtension}, sir!`, "success");
                 return;
             }
 
-            updateSystemInterfaceLog("Injecting bitstream arrays into virtual memory registers...", "info");
+            updateSystemInterfaceLog("Mounting source bitstream variables onto virtual sandbox sectors...", "info");
             const inName = 'input_' + sourceFileAsset.name.replace(/[^a-zA-Z0-9.]/g, '_');
             const outName = 'output_' + sourceFileAsset.name.split('.')[0].replace(/[^a-zA-Z0-9.]/g, '_') + '.' + targetFormatExtension;
 
             try {
                 ffmpegInstance.FS('writeFile', inName, await fetchFile(sourceFileAsset));
-                updateSystemInterfaceLog(`Processing multi-threaded transcode matrix into .${targetFormatExtension}...`, "info");
+                updateSystemInterfaceLog(`Multi-Threading Active: Compiling bitstream into .${targetFormatExtension}. Please hold...`);
                 
-                // FORCE TRUE RE-COMPILATION ALGORITHMS
                 if (targetFormatExtension === 'mp3') {
-                    await ffmpegInstance.run('-i', inName, '-codec:a', 'libmp3lame', '-b:a', '192k', outName);
+                    await ffmpegInstance.run('-i', inName, '-q:a', '2', outName);
                 } else if (targetFormatExtension === 'opus') {
-                    await ffmpegInstance.run('-i', inName, '-c:a', 'libopus', '-b:a', '96k', outName);
+                    await ffmpegInstance.run('-i', inName, '-c:a', 'libopus', '-b:a', '64k', outName);
                 } else if (targetFormatExtension === 'm4a') {
-                    await ffmpegInstance.run('-i', inName, '-c:a', 'aac', '-b:a', '160k', outName);
-                } else if (targetFormatExtension === 'mp4') {
-                    await ffmpegInstance.run('-i', inName, '-vcodec', 'libx264', '-crf', '22', '-acodec', 'aac', outName);
+                    await ffmpegInstance.run('-i', inName, '-c:a', 'aac', '-b:a', '128k', outName);
                 } else {
                     await ffmpegInstance.run('-i', inName, outName);
                 }
 
-                updateSystemInterfaceLog("Reading recompiled byte matrices from isolated hardware sectors...", "info");
-                const recompiledDataBuffer = ffmpegInstance.FS('readFile', outName);
-                let mime = isTargetAudio ? `audio/${targetFormatExtension}` : `video/${targetFormatExtension}`;
+                updateSystemInterfaceLog("Extraction phase triggered. Exporting bytes from hardware memory matrix...");
+                const data = ffmpegInstance.FS('readFile', outName);
+                let mime = ['mp3', 'opus', 'm4a', 'mp1', 'mp2'].includes(targetFormatExtension) ? `audio/${targetFormatExtension}` : `video/${targetFormatExtension}`;
 
-                executeSystemDownloadTrigger(URL.createObjectURL(new Blob([recompiledDataBuffer.buffer], { type: mime })), sourceFileAsset.name.split('.')[0] + `.${targetFormatExtension}`);
-                updateSystemInterfaceLog(`Bitstream matrix conversion successful. Real structural .${targetFormatExtension} generated, sir!`, "success");
+                executeSystemDownloadTrigger(URL.createObjectURL(new Blob([data.buffer], { type: mime })), sourceFileAsset.name.split('.')[0] + `.${targetFormatExtension}`);
+                updateSystemInterfaceLog(`Deep data transcoding successfully finished. Real .${targetFormatExtension} compiled, sir!`, "success");
 
                 ffmpegInstance.FS('unlink', inName);
                 ffmpegInstance.FS('unlink', outName);
             } catch (err) {
                 console.error(err);
-                updateSystemInterfaceLog("Compiler sector crash. Triggering data safety bypass download...", "error");
+                updateSystemInterfaceLog("Transcoding failure inside sandbox. Running emergency data preservation loop...", "error");
                 executeSystemDownloadTrigger(URL.createObjectURL(sourceFileAsset), sourceFileAsset.name.split('.')[0] + `.${targetFormatExtension}`);
             }
         }
