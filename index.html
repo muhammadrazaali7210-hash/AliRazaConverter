@@ -3,216 +3,343 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JARVIS Universal Quantum Core</title>
+    <title>JARVIS Local Processing Core</title>
     
-    <script src="coi-serviceworker.js"></script>
-    
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-    
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+
     <style>
         :root {
-            --bg-primary: #0a0f1d;
-            --bg-secondary: #111827;
-            --accent-cyan: #06b6d4;
+            --bg-dark: #0f172a;
+            --panel-dark: #1e293b;
+            --accent-cyan: #22d3ee;
             --accent-blue: #3b82f6;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --success: #10b981;
-            --error: #ef4444;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
 
         body {
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            padding: 20px;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
             display: flex;
             flex-direction: column;
             align-items: center;
+            padding: 20px;
             min-height: 100vh;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 25px;
-            width: 100%;
-            max-width: 600px;
-        }
-
-        header h1 {
-            font-size: 1.8rem;
+        .header-title {
             color: var(--accent-cyan);
-            text-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
-            letter-spacing: 1px;
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.3);
         }
 
-        header p {
+        .header-sub {
             color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-top: 5px;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            text-align: center;
         }
 
-        .main-container {
-            width: 100%;
-            max-width: 600px;
-            background: var(--bg-secondary);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-        }
-
-        .drop-zone {
-            border: 2px dashed var(--accent-blue);
+        .engine-container {
+            background: var(--panel-dark);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 12px;
-            padding: 35px 15px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--accent-blue);
+            border-radius: 8px;
+            padding: 30px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(59, 130, 246, 0.03);
+            background: rgba(59, 130, 246, 0.05);
+            transition: 0.3s;
         }
 
-        .drop-zone:hover {
+        .upload-zone:hover, .upload-zone.dragover {
             border-color: var(--accent-cyan);
-            background: rgba(6, 182, 212, 0.05);
+            background: rgba(34, 211, 238, 0.1);
         }
 
-        .drop-zone p {
-            color: var(--text-main);
-            font-weight: 500;
-        }
+        #file-input { display: none; }
 
-        #file-input {
-            display: none;
-        }
-
-        .file-details {
+        .file-info {
             margin-top: 15px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 8px;
-            padding: 12px;
-            display: none;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-cyan);
             font-size: 0.85rem;
+            display: none;
         }
 
-        .control-group {
-            margin-top: 20px;
-        }
-
-        label {
+        .selector-group { margin-top: 20px; }
+        
+        .selector-group label {
             display: block;
             font-size: 0.8rem;
             color: var(--text-muted);
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             text-transform: uppercase;
         }
 
         select {
             width: 100%;
-            background: var(--bg-primary);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            color: var(--text-main);
             padding: 12px;
-            border-radius: 8px;
-            font-size: 0.95rem;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
             outline: none;
+            font-size: 1rem;
         }
 
-        .btn-process {
+        .btn-execute {
             width: 100%;
+            margin-top: 20px;
+            padding: 14px;
             background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
             color: white;
             border: none;
-            padding: 14px;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 1rem;
             font-weight: bold;
-            margin-top: 20px;
             cursor: pointer;
+            box-shadow: 0 4px 15px rgba(34, 211, 238, 0.3);
+            transition: 0.2s;
         }
 
-        .status-container {
-            margin-top: 15px;
+        .btn-execute:active { transform: scale(0.98); }
+
+        .terminal-log {
+            margin-top: 20px;
             padding: 12px;
-            border-radius: 8px;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            display: none;
+            background: #000;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #10b981;
+            min-height: 40px;
             text-align: center;
+            border: 1px solid #10b981;
         }
 
-        #status-text {
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        canvas {
-            display: none;
-        }
+        .terminal-error { color: #ef4444; border-color: #ef4444; }
+        .terminal-info { color: var(--accent-cyan); border-color: var(--accent-cyan); }
+        
+        canvas { display: none; }
     </style>
 </head>
 <body>
 
-    <header>
-        <h1>JARVIS QUANTUM CORE</h1>
-        <p>Unlocked High-Performance Mobile Transcoder</p>
-    </header>
+    <div class="header-title">JARVIS CORE</div>
+    <div class="header-sub">True Local Hardware Processing Matrix</div>
 
-    <div class="main-container">
-        <div class="drop-zone" onclick="document.getElementById('file-input').click()">
-            <p>Select Target Asset Data Stream</p>
-            <span style="display:block; font-size:0.75rem; color:var(--text-muted); margin-top:8px;">Processor Hardware Unlocked & Active</span>
+    <div class="engine-container">
+        <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+            <p>Tap to Initialize Target Asset</p>
         </div>
         <input type="file" id="file-input">
 
-        <div class="file-details" id="file-info">
-            <strong>Active Asset:</strong> <span id="file-name">None</span> (<span id="file-size">0 KB</span>)
+        <div class="file-info" id="file-info">
+            <strong>Asset:</strong> <span id="file-name">None</span><br>
+            <strong>Size:</strong> <span id="file-size">0 KB</span>
         </div>
 
-        <div class="control-group">
-            <label for="target-format">Target Conversion Protocol</label>
-            <select id="target-format">
-                <optgroup label="TRUE VIDEO TRANSCODE (FFmpeg.wasm)">
-                    <option value="mp4">MP4 (True H.264 Video Encode)</option>
+        <div class="selector-group">
+            <label>Select Hardware Translation Protocol</label>
+            <select id="format-selector">
+                <optgroup label="Images (Canvas API Matrix)">
+                    <option value="png">PNG (Lossless Image)</option>
+                    <option value="jpg">JPG (Compressed Image)</option>
                 </optgroup>
-                <optgroup label="TRUE AUDIO TRANSCODE (FFmpeg.wasm)">
-                    <option value="mp3">MP3 (True Audio Layer Rewrite)</option>
-                    <option value="opus">OPUS (True Voice Codec Compress)</option>
-                    <option value="m4a">M4A (True Advanced Audio Coding)</option>
-                    <option value="mp1">MP1 (MPEG Layer-1 Stream)</option>
-                    <option value="mp2">MP2 (MPEG Layer-2 Stream)</option>
+                <optgroup label="Documents (Structural XML/Vector)">
+                    <option value="pdf">PDF (Vector Document)</option>
+                    <option value="docx">DOCX (OpenXML MS Word)</option>
                 </optgroup>
-                <optgroup label="TRUE IMAGE RE-ENCODE (Canvas Core)">
-                    <option value="png" selected>PNG (Lossless Matrix Image)</option>
-                    <option value="jpg">JPG (Compressed Matrix Image)</option>
-                    <option value="jpeg">JPEG (Compressed Matrix Image)</option>
-                </optgroup>
-                <optgroup label="TRUE DOCUMENT GENERATION (jsPDF/Structure)">
-                    <option value="pdf">PDF (True Vector Adobe Layout)</option>
-                    <option value="docx">DOCX (OpenXML Compressed Document)</option>
-                    <option value="doc">DOC (Legacy Word Document Object)</option>
-                    <option value="pptx">PPTX (OpenXML Presentation Block)</option>
+                <optgroup label="Media (FFmpeg WebAssembly)">
+                    <option value="mp3">MP3 (Audio Encode)</option>
+                    <option value="mp4">MP4 (Video Encode)</option>
                 </optgroup>
             </select>
         </div>
 
-        <button class="btn-process" onclick="executeConversion()">Execute Deep Structural Rewrite</button>
+        <button class="btn-execute" onclick="executeLocalConversion()">Compile & Execute Engine</button>
 
-        <div class="status-container" id="status-box">
-            <p id="status-text">Ready for instructions, sir...</p>
-        </div>
+        <div class="terminal-log terminal-info" id="terminal">System Standing By.</div>
     </div>
 
-    <canvas id="conversion-canvas"></canvas>
+    <canvas id="render-canvas"></canvas>
 
-    <script src="converter-core.js"></script>
+    <script>
+        let currentAsset = null;
+        const terminal = document.getElementById('terminal');
+
+        // Terminal Output Controller
+        function logToTerminal(message, type = "info") {
+            terminal.innerText = message;
+            terminal.className = `terminal-log terminal-${type}`;
+        }
+
+        // File Selection Logic
+        document.getElementById('file-input').addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                currentAsset = e.target.files[0];
+                document.getElementById('file-name').innerText = currentAsset.name;
+                document.getElementById('file-size').innerText = (currentAsset.size / 1024).toFixed(2) + " KB";
+                document.getElementById('file-info').style.display = "block";
+                logToTerminal("Asset locked into local memory.", "info");
+            }
+        });
+
+        // Main Routing Engine
+        async function executeLocalConversion() {
+            if (!currentAsset) return logToTerminal("Error: No asset detected.", "error");
+            
+            const targetFormat = document.getElementById('format-selector').value;
+            const originalName = currentAsset.name.split('.')[0];
+
+            logToTerminal(`Initiating true local compilation to .${targetFormat}...`, "info");
+
+            try {
+                if (['png', 'jpg'].includes(targetFormat)) {
+                    await processImageLocally(currentAsset, targetFormat, originalName);
+                } 
+                else if (targetFormat === 'pdf') {
+                    await processPdfLocally(currentAsset, originalName);
+                } 
+                else if (targetFormat === 'docx') {
+                    await processDocxLocally(currentAsset, originalName);
+                } 
+                else if (['mp3', 'mp4'].includes(targetFormat)) {
+                    await processMediaLocally(currentAsset, targetFormat, originalName);
+                }
+            } catch (error) {
+                console.error(error);
+                logToTerminal("Processor exception. Conversion failed.", "error");
+            }
+        }
+
+        // 1. TRUE IMAGE REWRITE (Canvas API)
+        function processImageLocally(file, format, baseName) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.getElementById('render-canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+                        
+                        const mime = format === 'jpg' ? 'image/jpeg' : 'image/png';
+                        triggerDownload(canvas.toDataURL(mime, 0.9), `${baseName}.${format}`);
+                        logToTerminal("Image matrix fully reconstructed.", "success");
+                        resolve();
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 2. TRUE PDF CREATION (PDF-Lib Vector Engine)
+        async function processPdfLocally(file, baseName) {
+            const pdfDoc = await PDFLib.PDFDocument.create();
+            const page = pdfDoc.addPage([600, 800]);
+
+            const arrayBuffer = await file.arrayBuffer();
+            const type = file.type;
+
+            if (type.includes('image')) {
+                let imageEmbed;
+                if (type.includes('png')) imageEmbed = await pdfDoc.embedPng(arrayBuffer);
+                else imageEmbed = await pdfDoc.embedJpg(arrayBuffer);
+                
+                const { width, height } = imageEmbed.scaleToFit(500, 700);
+                page.drawImage(imageEmbed, { x: 50, y: 800 - height - 50, width, height });
+            } else {
+                // Text to PDF
+                const text = await file.text();
+                page.drawText(text.substring(0, 2000), { x: 50, y: 750, size: 12, maxWidth: 500 });
+            }
+
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            triggerDownload(URL.createObjectURL(blob), `${baseName}.pdf`);
+            logToTerminal("True vector PDF successfully generated.", "success");
+        }
+
+        // 3. TRUE DOCX CREATION (JSZip OpenXML Compilation)
+        async function processDocxLocally(file, baseName) {
+            const text = await file.text();
+            const safeText = text.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','\'':'&apos;','"':'&quot;'}[c] || c));
+            
+            const zip = new JSZip();
+            zip.file("[Content_Types].xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
+            zip.file("_rels/.rels", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+            
+            const wordFolder = zip.folder("word");
+            wordFolder.file("document.xml", `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>${safeText}</w:t></w:r></w:p></w:body></w:document>`);
+
+            const content = await zip.generateAsync({ type: "blob" });
+            triggerDownload(URL.createObjectURL(content), `${baseName}.docx`);
+            logToTerminal("Microsoft OpenXML archive strictly compiled.", "success");
+        }
+
+        // 4. TRUE MEDIA ENCODING (FFmpeg WebAssembly Core)
+        async function processMediaLocally(file, format, baseName) {
+            logToTerminal("Booting FFmpeg WebAssembly processor...", "info");
+            const { createFFmpeg, fetchFile } = FFmpeg;
+            
+            // Core path specifically routed for mobile compatibility
+            const ffmpeg = createFFmpeg({ 
+                log: true, 
+                corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js' 
+            });
+            
+            await ffmpeg.load();
+            logToTerminal(`Hardware unlocked. Encoding to ${format}...`, "info");
+            
+            const inName = 'input.' + file.name.split('.').pop();
+            const outName = `output.${format}`;
+            
+            ffmpeg.FS('writeFile', inName, await fetchFile(file));
+            
+            // Standard execution command
+            await ffmpeg.run('-i', inName, outName);
+            
+            const data = ffmpeg.FS('readFile', outName);
+            const mime = format === 'mp3' ? 'audio/mpeg' : 'video/mp4';
+            const blob = new Blob([data.buffer], { type: mime });
+            
+            triggerDownload(URL.createObjectURL(blob), `${baseName}.${format}`);
+            logToTerminal("Media matrix natively transcoded.", "success");
+        }
+
+        // File Ejection Routine
+        function triggerDownload(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
 </body>
 </html>
