@@ -1,24 +1,50 @@
-/*! coi-serviceworker v0.1.7 | MIT License | https://github.com/gzuidhof/coi-serviceworker */
+/*! coi-serviceworker v0.1.6 - Custom JARVIS Implementation */
 if (typeof window === 'undefined') {
     self.addEventListener("install", () => self.skipWaiting());
-    self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
-    self.addEventListener("fetch", (e) => {
-        if (e.request.cache === "only-if-cached" && e.request.mode !== "same-origin") return;
-        e.respondWith(
-            fetch(e.request).then((r) => {
-                if (r.status === 0) return r;
-                const h = new Headers(r.headers);
-                h.set("Cross-Origin-Embedder-Policy", "require-corp");
-                h.set("Cross-Origin-Opener-Policy", "same-origin");
-                return new Response(r.body, { status: r.status, statusText: r.statusText, headers: h });
-            }).catch((err) => console.error(err))
+    self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+
+    self.addEventListener("fetch", function (event) {
+        if (event.request.cache === "only-if-cached" && event.request.mode !== "same-origin") {
+            return;
+        }
+
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    if (response.status === 0) {
+                        return response;
+                    }
+
+                    const newHeaders = new Headers(response.headers);
+                    newHeaders.set("Cross-Origin-Embedder-Policy", "require-corp");
+                    newHeaders.set("Cross-Origin-Opener-Policy", "same-origin");
+
+                    return new Response(response.body, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        headers: newHeaders,
+                    });
+                })
+                .catch((e) => console.error("JARVIS Core Fetch Error:", e))
         );
     });
 } else {
-    if (window.crossOriginIsolated === false && navigator.serviceWorker) {
-        navigator.serviceWorker.register(window.document.currentScript.src).then((reg) => {
-            reg.addEventListener("updatefound", () => location.reload());
-            if (reg.active) location.reload();
-        });
-    }
+    (() => {
+        const scriptEl = document.currentScript;
+        if (scriptEl) {
+            navigator.serviceWorker.register(scriptEl.src).then(
+                (registration) => {
+                    registration.addEventListener("updatefound", () => {
+                        console.log("JARVIS Security Matrix Loading... Reloading interface.");
+                        window.location.reload();
+                    });
+                    if (registration.active && !navigator.crossOriginIsolated) {
+                        console.log("JARVIS Security Matrix Activated. Reloading interface.");
+                        window.location.reload();
+                    }
+                },
+                (err) => console.error("JARVIS Security Matrix Failed to boot:", err)
+            );
+        }
+    })();
 }
