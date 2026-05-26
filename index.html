@@ -393,7 +393,7 @@
 
             updateProgressBar(100, "Compiling Final PDF...");
             const pdfBytes = await pdfDoc.save();
-            triggerDownload(URL.createObjectURL(new Blob([pdfBytes], { type: 'application/pdf' })), `JARVIS_Master_Document.pdf`);
+            triggerDownload(new Blob([pdfBytes], { type: 'application/pdf' }), `JARVIS_Master_Document.pdf`);
             logToTerminal(`Flawless Master PDF containing ${validPages} pages generated, sir!`, "success");
         }
 
@@ -416,7 +416,7 @@
 
                         canvas.toBlob((blob) => {
                             if (!blob) return reject("Blob failure");
-                            triggerDownload(URL.createObjectURL(blob), `${baseName}.${format}`);
+                            triggerDownload(blob, `${baseName}.${format}`);
                             resolve();
                         }, mime, 0.95);
                     };
@@ -449,7 +449,7 @@
 
                                 canvas.toBlob((blob) => {
                                     if (!blob) return reject();
-                                    triggerDownload(URL.createObjectURL(blob), `${originalName}_page1.${targetFormat}`);
+                                    triggerDownload(blob, `${originalName}_page1.${targetFormat}`);
                                     resolve();
                                 }, mime, 0.95);
                             });
@@ -482,7 +482,7 @@
             const isAudioOutput = ['mp3', 'wav', 'm4a'].includes(targetFormat);
             const isVideoOutput = ['mp4', 'mkv'].includes(targetFormat);
 
-            if (isAudioInput && isVideoOutput) {
+                        if (isAudioInput && isVideoOutput) {
                 await ffmpeg.run('-f', 'lavfi', '-i', 'color=c=black:s=640x480:r=30', '-i', inName, '-c:v', 'libx264', '-tune', 'stillimage', '-c:a', 'aac', '-b:a', '128k', '-pix_fmt', 'yuv420p', '-shortest', outName);
             } else if (isAudioOutput) {
                 await ffmpeg.run('-i', inName, '-vn', outName);
@@ -498,19 +498,24 @@
             if (targetFormat === 'wav') mime = 'audio/wav';
             if (targetFormat === 'mkv') mime = 'video/x-matroska';
 
-            triggerDownload(URL.createObjectURL(new Blob([data.buffer], { type: mime })), `${originalName}.${targetFormat}`);
+            triggerDownload(new Blob([data.buffer], { type: mime }), `${originalName}.${targetFormat}`);
             
             ffmpeg.FS('unlink', inName);
             ffmpeg.FS('unlink', outName);
         }
 
-        function triggerDownload(url, filename) {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+        // Base64 DataURL converter for seamless Android WebView download interception
+        function triggerDownload(blob, filename) {
+            const reader = new FileReader();
+            reader.onloadend = function() {
+                const a = document.createElement('a');
+                a.href = reader.result;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            };
+            reader.readAsDataURL(blob);
         }
     </script>
 </body>
