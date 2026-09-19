@@ -4,6 +4,10 @@ import io
 
 app = Flask(__name__)
 
+@app.errorhandler(Exception)
+def handle_exception(e):
+    return Response(f"Execution Error: {str(e)}", status=500, mimetype='text/plain')
+
 @app.route('/api/convert', methods=['POST', 'OPTIONS'])
 def convert_image():
     if request.method == 'OPTIONS':
@@ -14,14 +18,14 @@ def convert_image():
         return res
 
     try:
-        uploaded_files = request.files.getlist('files')
-        if not uploaded_files or len(uploaded_files) == 0:
-            if 'file' in request.files:
-                uploaded_files = [request.files['file']]
-            else:
-                return Response("No file streams uploaded", status=400)
+        uploaded_files = []
+        if request.files:
+            for key in request.files:
+                uploaded_files.extend(request.files.getlist(key))
 
-        # Sanitize and extract uppercase primary format tag
+        if not uploaded_files:
+            return Response("Error: No file binary stream received.", status=400)
+
         raw_format = request.form.get('format', 'PNG').strip().upper()
         target_format = raw_format.split(' ')[0]
 
@@ -29,33 +33,38 @@ def convert_image():
 
         if target_format == 'PDF':
             images = []
-            for file in uploaded_files:
-                img = Image.open(file.stream)
-                if img.mode in ('RGBA', 'P', 'LA'):
-                    img = img.convert('RGB')
-                images.append(img)
+            for file_obj in uploaded_files:
+                try:
+                    img = Image.open(file_obj)
+                    if img.mode in ('RGBA', 'P', 'LA'):
+                        img = img.convert('RGB')
+                    images.append(img)
+                except Exception as img_err:
+                    return Response(f"Invalid image asset: {str(img_err)}", status=400)
 
-            if images:
-                primary = images[0]
-                secondary = images[1:] if len(images) > 1 else []
-                primary.save(output_io, format='PDF', save_all=True, append_images=secondary)
+            if not images:
+                return Response("Failed to process image assets for PDF", status=400)
+
+            primary = images[0]
+            secondary = images[1:] if len(images) > 1 else []
+            primary.save(output_io, format='PDF', save_all=True, append_images=secondary)
 
         elif target_format in ['PNG', 'JPG', 'JPEG', 'WEBP']:
-            file = uploaded_files[0]
-            img = Image.open(file.stream)
+            file_obj = uploaded_files[0]
+            img = Image.open(file_obj)
 
             if target_format in ['JPEG', 'JPG'] and img.mode in ('RGBA', 'P', 'LA'):
                 img = img.convert('RGB')
 
-            save_format = 'JPEG' if target_format in ['JPG', 'JPEG'] else target_format
-            img.save(output_io, format=save_format, quality=95)
+            save_fmt = 'JPEG' if target_format in ['JPG', 'JPEG'] else target_format
+            img.save(output_io, format=save_fmt, quality=95)
 
         elif target_format in ['MP3', 'M4A', 'WAV', 'MP4', 'MKV']:
-            file = uploaded_files[0]
-            output_io.write(file.read())
+            file_obj = uploaded_files[0]
+            output_io.write(file_obj.read())
 
         else:
-            return Response(f"Unsupported format tag: {target_format}", status=400)
+            return Response(f"Unsupported format specified: {target_format}", status=400)
 
         output_io.seek(0)
 
@@ -83,5 +92,5 @@ def convert_image():
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
-    except Exception as e:
-        return Response(f"Internal Error: {str(e)}", status=500)
+    except Exception as err:
+        return Response(f"Server Processing Error: {str(err)}", status=500)
