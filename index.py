@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 @app.route('/api/convert', methods=['POST', 'OPTIONS'])
 @app.route('/api/index', methods=['POST', 'OPTIONS'])
-@app.route('/', methods=['POST', 'OPTIONS'])
+@app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 def convert_handler():
     if request.method == 'OPTIONS':
         res = Response()
@@ -15,6 +15,9 @@ def convert_handler():
         res.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         res.headers['Access-Control-Allow-Headers'] = 'Content-Type'
         return res, 200
+
+    if request.method == 'GET':
+        return Response("Jarvis Quantum Core Engine Online", status=200)
 
     try:
         uploaded_files = []
