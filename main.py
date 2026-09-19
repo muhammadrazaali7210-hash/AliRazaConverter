@@ -5,14 +5,18 @@ import base64
 
 app = Flask(__name__)
 
+@app.route('/', methods=['GET', 'POST', 'OPTIONS'])
 @app.route('/api/convert', methods=['POST', 'OPTIONS'])
-def convert_image():
+def convert_handler():
     if request.method == 'OPTIONS':
         res = Response()
         res.headers['Access-Control-Allow-Origin'] = '*'
         res.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         res.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return res
+        return res, 200
+
+    if request.method == 'GET':
+        return Response("Jarvis Quantum Core Engine Online", status=200)
 
     try:
         uploaded_files = []
@@ -85,3 +89,6 @@ def convert_image():
 
     except Exception as err:
         return Response(f"Processing Error: {str(err)}", status=500)
+
+# WSGI entrypoint for Vercel Python runtime
+app = app
