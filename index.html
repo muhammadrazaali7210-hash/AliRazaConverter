@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis Quantum Core</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>JARVIS QUANTUM CORE</h1>
+        <p class="subtitle">Maximum Capacity Media Engine</p>
+        
+        <div class="drop-zone" id="dropZone">
+            <input type="file" id="fileInput" multiple style="display: none;">
+            <p id="fileLabel">Drop files here or click to select</p>
+        </div>
+
+        <div class="controls">
+            <label for="formatSelect">SELECT TARGET BATCH TRANSLATION PROTOCOL</label>
+            <select id="formatSelect">
+                <option value="PNG">PNG (Lossless Matrix Image)</option>
+                <option value="JPG">JPG (Compressed Image)</option>
+                <option value="WEBP">WEBP (Web Optimized)</option>
+                <option value="PDF">PDF (Document Compilation)</option>
+            </select>
+
+            <button id="convertBtn">Compile & Execute Batch</button>
+        </div>
+
+        <div id="status" class="status-box">System Standing By, sir.</div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
