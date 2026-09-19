@@ -56,10 +56,6 @@ def universal_handler(path):
             save_fmt = 'JPEG' if target_format in ['JPG', 'JPEG'] else target_format
             img.save(output_io, format=save_fmt, quality=95)
 
-        elif target_format in ['MP3', 'M4A', 'WAV', 'MP4', 'MKV']:
-            file_obj = uploaded_files[0]
-            output_io.write(file_obj.read())
-
         else:
             return Response(f"Unsupported format: {target_format}", status=400)
 
@@ -71,12 +67,7 @@ def universal_handler(path):
             'JPEG': 'image/jpeg',
             'JPG': 'image/jpeg',
             'WEBP': 'image/webp',
-            'PDF': 'application/pdf',
-            'MP3': 'audio/mpeg',
-            'M4A': 'audio/mp4',
-            'WAV': 'audio/wav',
-            'MP4': 'video/mp4',
-            'MKV': 'video/x-matroska'
+            'PDF': 'application/pdf'
         }
 
         res = Response(encoded_output, status=200, mimetype='text/plain')
