@@ -1,89 +1,53 @@
-import os
-import sys
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.label import Label
-from kivy.uix.button import Button
-from kivy.uix.spinner import Spinner
-from kivy.uix.progressbar import ProgressBar
-from kivy.core.window import Window
+from flask import Flask, request, send_file, Response
 from PIL import Image
+import io
 
-# Set dark sci-fi UI theme matching your design
-Window.clearcolor = (0.05, 0.07, 0.11, 1)
+app = Flask(__name__)
 
-class ConverterEngine(BoxLayout):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.orientation = 'vertical'
-        self.padding = 30
-        self.spacing = 20
+@app.route('/api/convert', methods=['POST', 'OPTIONS'])
+def convert_image():
+    if request.method == 'OPTIONS':
+        res = Response()
+        res.headers['Access-Control-Allow-Origin'] = '*'
+        res.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        res.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return res
 
-        # Header Title
-        self.add_widget(Label(
-            text="JARVIS QUANTUM CORE",
-            font_size='22sp',
-            bold=True,
-            color=(0.34, 0.65, 1, 1),
-            size_hint_y=None,
-            height=40
-        ))
+    try:
+        if 'file' not in request.files:
+            return Response("No file uploaded", status=400)
+            
+        file = request.files['file']
+        target_format = request.form.get('format', 'PNG').upper()
+
+        img = Image.open(file.stream)
         
-        self.add_widget(Label(
-            text="Maximum Capacity Media Engine",
-            font_size='13sp',
-            color=(0.54, 0.58, 0.62, 1),
-            size_hint_y=None,
-            height=20
-        ))
+        if target_format in ['JPEG', 'JPG', 'PDF'] and img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
 
-        # Target Protocol Selector (Dropdown UI)
-        self.format_spinner = Spinner(
-            text='PNG (Lossless Matrix Image)',
-            values=(
-                'PNG (Lossless Matrix Image)',
-                'JPG (Compressed Matrix Image)',
-                'WEBP (Modern Web Image)',
-                'PDF (Unified Master Document)'
-            ),
-            size_hint=(1, None),
-            height=50,
-            background_normal='',
-            background_color=(0.09, 0.11, 0.15, 1),
-            color=(0.78, 0.82, 0.85, 1)
+        output_io = io.BytesIO()
+        save_format = 'JPEG' if target_format == 'JPG' else target_format
+        img.save(output_io, format=save_format)
+        output_io.seek(0)
+
+        mime_types = {
+            'PNG': 'image/png',
+            'JPEG': 'image/jpeg',
+            'JPG': 'image/jpeg',
+            'WEBP': 'image/webp',
+            'PDF': 'application/pdf'
+        }
+        
+        filename = f"converted_asset.{target_format.lower()}"
+
+        response = send_file(
+            output_io,
+            mimetype=mime_types.get(target_format, 'image/png'),
+            as_attachment=True,
+            download_name=filename
         )
-        self.add_widget(self.format_spinner)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
 
-        # Action Button
-        self.convert_btn = Button(
-            text="Compile & Execute Batch",
-            bold=True,
-            size_hint=(1, None),
-            height=55,
-            background_normal='',
-            background_color=(0.12, 0.43, 0.92, 1),
-            color=(1, 1, 1, 1)
-        )
-        self.convert_btn.bind(on_release=self.process_conversion)
-        self.add_widget(self.convert_btn)
-
-        # Output Terminal Status
-        self.status_label = Label(
-            text="System Standing By, sir.",
-            font_size='13sp',
-            color=(0.34, 0.65, 1, 1),
-            size_hint_y=None,
-            height=40
-        )
-        self.add_widget(self.status_label)
-
-    def process_conversion(self, instance):
-        self.status_label.text = "Processing asset conversion..."
-        # Add native conversion logic here (e.g., PIL for images, ReportLab for PDF)
-
-class ConverterApp(App):
-    def build(self):
-        return ConverterEngine()
-
-if __name__ == '__main__':
-    ConverterApp().run()
+    except Exception as e:
+        return Response(str(e), status=500)
