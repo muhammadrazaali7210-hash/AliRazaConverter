@@ -24,13 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Extract clean protocol format (e.g., "PDF" from "PDF (Unified Master Document)")
         const rawFormat = protocolSelect.value;
         const selectedFormat = rawFormat.split(' ')[0].toUpperCase();
 
         const formData = new FormData();
         for (let i = 0; i < fileInput.files.length; i++) {
             formData.append('files', fileInput.files[i]);
+            if (i === 0) {
+                formData.append('file', fileInput.files[0]);
+            }
         }
         formData.append('format', selectedFormat);
 
@@ -44,15 +46,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!response.ok) {
                 const errText = await response.text();
-                throw new Error(errText || 'Batch compilation failed');
+                throw new Error(errText || `Server responded with status ${response.status}`);
             }
 
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
+            const base64Data = await response.text();
+            const mimeType = response.headers.get('X-MIME-Type') || 'application/octet-stream';
+            
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
 
+            const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = `converted_batch.${selectedFormat.toLowerCase()}`;
+            link.download = `converted_asset.${selectedFormat.toLowerCase()}`;
             document.body.appendChild(link);
             link.click();
 
@@ -65,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(error);
-            statusBox.textContent = error.message || 'Error during conversion pipeline.';
+            statusBox.textContent = error.message;
         }
     });
 });
