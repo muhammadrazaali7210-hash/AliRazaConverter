@@ -132,6 +132,7 @@
             font-size: 13px;
             color: #00d2ff;
             font-family: monospace;
+            word-break: break-word;
         }
 
         input[type="file"] {
@@ -146,8 +147,8 @@
 
     <div class="card">
         <div class="drop-zone" id="drop-zone">
-            <span id="file-label">Tap to Initialize Target Asset Streams (Max 200)</span>
-            <input type="file" id="file-input">
+            <span id="file-label">Tap to Initialize Target Asset Streams (Unlimited Input)</span>
+            <input type="file" id="file-input" multiple>
         </div>
 
         <span class="label-text">SELECT TARGET BATCH TRANSLATION PROTOCOL</span>
@@ -159,6 +160,13 @@
             </optgroup>
             <optgroup label="Document Compiler (All files into ONE)">
                 <option value="PDF">PDF (Unified Master Document)</option>
+            </optgroup>
+            <optgroup label="Media (FFmpeg WebAssembly Core)">
+                <option value="MP3">MP3 (True Audio Layer Rewrite)</option>
+                <option value="M4A">M4A (AAC Audio Container)</option>
+                <option value="WAV">WAV (Uncompressed Audio PCM)</option>
+                <option value="MP4">MP4 (True H.264 Video Encode)</option>
+                <option value="MKV">MKV (Matroska Media Container)</option>
             </optgroup>
         </select>
 

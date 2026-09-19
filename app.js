@@ -9,8 +9,12 @@ document.addEventListener('DOMContentLoaded', () => {
     dropZone.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', () => {
-        if (fileInput.files.length > 0) {
-            fileLabel.textContent = `Target Loaded: ${fileInput.files[0].name}`;
+        const count = fileInput.files.length;
+        if (count > 0) {
+            fileLabel.textContent = count === 1 
+                ? `Target Loaded: ${fileInput.files[0].name}` 
+                : `Targets Loaded: ${count} Asset Streams`;
+            statusBox.textContent = 'System Standing By, sir.';
         }
     });
 
@@ -22,7 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const selectedFormat = protocolSelect.value;
         const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
+        
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('files', fileInput.files[i]);
+        }
         formData.append('format', selectedFormat);
 
         statusBox.textContent = 'Executing translation batch...';
@@ -34,7 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!response.ok) {
-                throw new Error('Batch compilation failed');
+                const errText = await response.text();
+                throw new Error(errText || 'Batch compilation failed');
             }
 
             const blob = await response.blob();
@@ -42,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.download = `converted_asset.${selectedFormat.toLowerCase()}`;
+            link.download = `converted_batch.${selectedFormat.toLowerCase()}`;
             document.body.appendChild(link);
             link.click();
 
@@ -55,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error(error);
-            statusBox.textContent = 'Error during conversion pipeline.';
+            statusBox.textContent = error.message || 'Error during conversion pipeline.';
         }
     });
 });
