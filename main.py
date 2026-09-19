@@ -21,10 +21,12 @@ def convert_image():
             else:
                 return Response("No file streams uploaded", status=400)
 
-        target_format = request.form.get('format', 'PNG').strip().upper()
+        # Sanitize and extract uppercase primary format tag
+        raw_format = request.form.get('format', 'PNG').strip().upper()
+        target_format = raw_format.split(' ')[0]
+
         output_io = io.BytesIO()
 
-        # Document compilation pipeline (PDF)
         if target_format == 'PDF':
             images = []
             for file in uploaded_files:
@@ -38,7 +40,6 @@ def convert_image():
                 secondary = images[1:] if len(images) > 1 else []
                 primary.save(output_io, format='PDF', save_all=True, append_images=secondary)
 
-        # Image matrix pipeline (PNG, JPG, WEBP)
         elif target_format in ['PNG', 'JPG', 'JPEG', 'WEBP']:
             file = uploaded_files[0]
             img = Image.open(file.stream)
@@ -49,13 +50,12 @@ def convert_image():
             save_format = 'JPEG' if target_format in ['JPG', 'JPEG'] else target_format
             img.save(output_io, format=save_format, quality=95)
 
-        # Media containers placeholder stream (Audio/Video formats)
         elif target_format in ['MP3', 'M4A', 'WAV', 'MP4', 'MKV']:
             file = uploaded_files[0]
             output_io.write(file.read())
 
         else:
-            return Response("Unsupported target format requested", status=400)
+            return Response(f"Unsupported format tag: {target_format}", status=400)
 
         output_io.seek(0)
 

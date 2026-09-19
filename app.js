@@ -24,9 +24,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const selectedFormat = protocolSelect.value;
+        // Extract clean protocol format (e.g., "PDF" from "PDF (Unified Master Document)")
+        const rawFormat = protocolSelect.value;
+        const selectedFormat = rawFormat.split(' ')[0].toUpperCase();
+
         const formData = new FormData();
-        
         for (let i = 0; i < fileInput.files.length; i++) {
             formData.append('files', fileInput.files[i]);
         }
