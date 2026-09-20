@@ -19,11 +19,23 @@
         <div class="controls">
             <label for="formatSelect">SELECT TARGET BATCH TRANSLATION PROTOCOL</label>
             <select id="formatSelect">
-                <option value="PNG">PNG (Lossless Matrix Image)</option>
-                <option value="JPG">JPG (Compressed Image)</option>
-                <option value="WEBP">WEBP (Web Optimized)</option>
-                <option value="PDF">PDF (Document Compilation)</option>
+                <optgroup label="Image Formats">
+                    <option value="PNG">PNG (Lossless Matrix Image)</option>
+                    <option value="JPG">JPG / JPEG (Compressed Image)</option>
+                    <option value="WEBP">WEBP (Web Optimized Engine)</option>
+                    <option value="GIF">GIF (Graphics Interchange Format)</option>
+                    <option value="BMP">BMP (Bitmap Standard)</option>
+                    <option value="TIFF">TIFF (High Dynamic Range)</option>
+                    <option value="ICO">ICO (Icon Resource Asset)</option>
+                </optgroup>
+                <optgroup label="Document Formats">
+                    <option value="PDF">PDF (Document Compilation)</option>
+                </optgroup>
             </select>
+
+            <div id="progressContainer" class="progress-container" style="display: none;">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
 
             <button id="convertBtn">Compile & Execute Batch</button>
         </div>

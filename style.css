@@ -87,6 +87,23 @@ select {
     font-size: 0.9rem;
 }
 
+.progress-container {
+    width: 100%;
+    height: 10px;
+    background-color: #0f172a;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid #334155;
+    margin-top: 5px;
+}
+
+.progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+    transition: width 0.2s ease;
+}
+
 button {
     width: 100%;
     padding: 14px;
@@ -113,4 +130,5 @@ button:hover {
     color: #38bdf8;
     font-size: 0.85rem;
     margin-top: 10px;
+    word-break: break-word;
 }

@@ -45,19 +45,20 @@ def universal_handler(path):
             secondary = images[1:] if len(images) > 1 else []
             primary.save(output_io, format='PDF', save_all=True, append_images=secondary)
 
-        elif target_format in ['PNG', 'JPG', 'JPEG', 'WEBP']:
+        else:
             file_obj = uploaded_files[0]
             img_bytes = file_obj.read()
             img = Image.open(io.BytesIO(img_bytes))
 
-            if target_format in ['JPEG', 'JPG'] and img.mode in ('RGBA', 'P', 'LA'):
+            save_fmt = target_format
+            if target_format in ['JPG', 'JPEG']:
+                save_fmt = 'JPEG'
+                if img.mode in ('RGBA', 'P', 'LA'):
+                    img = img.convert('RGB')
+            elif target_format in ['BMP', 'ICO'] and img.mode in ('RGBA', 'LA'):
                 img = img.convert('RGB')
 
-            save_fmt = 'JPEG' if target_format in ['JPG', 'JPEG'] else target_format
-            img.save(output_io, format=save_fmt, quality=95)
-
-        else:
-            return Response(f"Unsupported format: {target_format}", status=400)
+            img.save(output_io, format=save_fmt)
 
         output_io.seek(0)
         encoded_output = base64.b64encode(output_io.getvalue()).decode('utf-8')
@@ -67,6 +68,10 @@ def universal_handler(path):
             'JPEG': 'image/jpeg',
             'JPG': 'image/jpeg',
             'WEBP': 'image/webp',
+            'GIF': 'image/gif',
+            'BMP': 'image/bmp',
+            'TIFF': 'image/tiff',
+            'ICO': 'image/x-icon',
             'PDF': 'application/pdf'
         }
 
