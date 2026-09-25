@@ -1,7 +1,6 @@
 const sharp = require('sharp');
 const { PDFDocument } = require('pdf-lib');
 
-// In-memory chunk cache across function warm invocations
 global.chunkStore = global.chunkStore || {};
 
 module.exports = async (req, res) => {
@@ -12,30 +11,25 @@ module.exports = async (req, res) => {
     try {
         const { action, fileId, chunkIndex, totalChunks, chunkData, fileIds, format } = req.body;
 
-        // Action 1: Store Chunk
         if (action === 'upload_chunk') {
             if (!global.chunkStore[fileId]) {
                 global.chunkStore[fileId] = new Array(totalChunks);
             }
             global.chunkStore[fileId][chunkIndex] = chunkData;
-
-            return res.status(200).json({ status: 'chunk_received' });
+            return res.status(200).json({ status: 'chunk_stored' });
         }
 
-        // Action 2: Assemble & Convert
         if (action === 'process') {
             const assembledBuffers = [];
 
             for (const id of fileIds) {
                 const chunks = global.chunkStore[id];
                 if (!chunks) {
-                    return res.status(400).json({ error: 'Session expired or missing chunks.' });
+                    return res.status(400).json({ error: 'Chunk buffer missing or expired from memory.' });
                 }
 
                 const fullBase64 = chunks.join('');
                 assembledBuffers.push(Buffer.from(fullBase64, 'base64'));
-
-                // Clear memory
                 delete global.chunkStore[id];
             }
 
@@ -67,13 +61,15 @@ module.exports = async (req, res) => {
                 } else if (format === 'bmp') {
                     processedBuffer = await sharp(imgBuffer).toFormat('bmp').toBuffer();
                 } else {
-                    return res.status(400).json({ error: 'Unsupported format.' });
+                    return res.status(400).json({ error: 'Unsupported format requested.' });
                 }
 
                 const resultBase64 = processedBuffer.toString('base64');
                 return res.status(200).json({ downloadUrl: `data:${mimeType};base64,${resultBase64}` });
             }
         }
+
+        return res.status(400).json({ error: 'Invalid action specified.' });
     } catch (err) {
         return res.status(500).json({ error: err.message });
     }

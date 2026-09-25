@@ -6,7 +6,8 @@ const formatSelect = document.getElementById('formatSelect');
 const statusBox = document.getElementById('status');
 
 let selectedFiles = [];
-const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB chunks to guarantee < 4.5MB Vercel limit
+// 2.5MB chunks ensure Base64 string overhead stays strictly under Vercel's 4.5MB limit
+const CHUNK_SIZE = 2.5 * 1024 * 1024; 
 
 dropZone.addEventListener('click', () => fileInput.click());
 
@@ -17,7 +18,7 @@ fileInput.addEventListener('change', (e) => {
 
 function updateFileLabel() {
     if (selectedFiles.length > 0) {
-        fileLabel.innerText = `${selectedFiles.length} file(s) selected: ${selectedFiles.map(f => f.name).join(', ')}`;
+        fileLabel.innerText = `${selectedFiles.length} file(s) selected:\n` + selectedFiles.map(f => f.name).join('\n');
     } else {
         fileLabel.innerText = 'Drop files here or click to select';
     }
@@ -39,59 +40,66 @@ convertBtn.addEventListener('click', async () => {
     }
 
     const targetFormat = formatSelect.value;
-    const fileId = `file_${Date.now()}`;
+    const batchSessionId = `batch_${Date.now()}`;
 
     try {
-        const processedImages = [];
+        const processedFileIds = [];
 
         for (let fIdx = 0; fIdx < selectedFiles.length; fIdx++) {
             const file = selectedFiles[fIdx];
             const base64Str = await fileToBase64(file);
             const totalChunks = Math.ceil(base64Str.length / CHUNK_SIZE);
-
-            statusBox.innerText = `Uploading file ${fIdx + 1}/${selectedFiles.length} in ${totalChunks} chunks to Vercel...`;
+            const fileId = `${batchSessionId}_file_${fIdx}`;
 
             for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
-                const chunk = base64Str.slice(chunkIdx * CHUNK_SIZE, (chunkIdx + 1) * CHUNK_SIZE);
+                statusBox.innerText = `Streaming File ${fIdx + 1}/${selectedFiles.length} (Chunk ${chunkIdx + 1}/${totalChunks})...`;
+
+                const chunkData = base64Str.slice(chunkIdx * CHUNK_SIZE, (chunkIdx + 1) * CHUNK_SIZE);
 
                 const res = await fetch('/api/convert', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'upload_chunk',
-                        fileId: `${fileId}_${fIdx}`,
+                        fileId: fileId,
                         chunkIndex: chunkIdx,
                         totalChunks: totalChunks,
-                        chunkData: chunk
+                        chunkData: chunkData
                     })
                 });
 
-                if (!res.ok) throw new Error(`Chunk ${chunkIdx + 1} transfer failed.`);
+                if (!res.ok) {
+                    const errErr = await res.json();
+                    throw new Error(errErr.error || `Chunk upload failed on file ${fIdx + 1}`);
+                }
             }
 
-            processedImages.push(`${fileId}_${fIdx}`);
+            processedFileIds.push(fileId);
         }
 
-        statusBox.innerText = 'Assembling chunks and converting on Vercel engine...';
+        statusBox.innerText = 'All chunks transmitted. Executing server assembly & conversion...';
 
         const finalRes = await fetch('/api/convert', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'process',
-                fileIds: processedImages,
+                fileIds: processedFileIds,
                 format: targetFormat
             })
         });
 
-        if (!finalRes.ok) throw new Error('Vercel assembly/conversion failed.');
+        if (!finalRes.ok) {
+            const errData = await finalRes.json();
+            throw new Error(errData.error || 'Server processing failed.');
+        }
 
         const result = await finalRes.json();
-        statusBox.innerText = 'Conversion complete. Initiating download, sir.';
+        statusBox.innerText = 'Batch operation complete. Initiating download, sir.';
 
         const link = document.createElement('a');
         link.href = result.downloadUrl;
-        link.download = `converted_result.${targetFormat}`;
+        link.download = `converted_batch.${targetFormat === 'pdf' ? 'pdf' : targetFormat}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
