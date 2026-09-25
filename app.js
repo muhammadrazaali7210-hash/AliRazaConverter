@@ -4,31 +4,14 @@ const fileLabel = document.getElementById('fileLabel');
 const convertBtn = document.getElementById('convertBtn');
 const formatSelect = document.getElementById('formatSelect');
 const statusBox = document.getElementById('status');
-const progressContainer = document.getElementById('progressContainer');
-const progressBar = document.getElementById('progressBar');
 
 let selectedFiles = [];
+const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB chunks to guarantee < 4.5MB Vercel limit
 
 dropZone.addEventListener('click', () => fileInput.click());
 
 fileInput.addEventListener('change', (e) => {
     selectedFiles = Array.from(e.target.files);
-    updateFileLabel();
-});
-
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.style.borderColor = '#38bdf8';
-});
-
-dropZone.addEventListener('dragleave', () => {
-    dropZone.style.borderColor = '#0284c7';
-});
-
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.style.borderColor = '#0284c7';
-    selectedFiles = Array.from(e.dataTransfer.files);
     updateFileLabel();
 });
 
@@ -40,62 +23,80 @@ function updateFileLabel() {
     }
 }
 
-convertBtn.addEventListener('click', () => {
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+    });
+}
+
+convertBtn.addEventListener('click', async () => {
     if (selectedFiles.length === 0) {
         statusBox.innerText = 'Error: Please select at least one file first, sir.';
         return;
     }
 
-    // Check payload size threshold (Vercel Serverless payload limit: 4.5 MB)
-    let totalSize = selectedFiles.reduce((acc, f) => acc + f.size, 0);
-    if (totalSize > 4.5 * 1024 * 1024) {
-        statusBox.innerText = `Error: Payload is ${(totalSize / (1024 * 1024)).toFixed(2)} MB. Vercel serverless limit is 4.5 MB per request. Please choose smaller files, sir.`;
-        return;
-    }
-
     const targetFormat = formatSelect.value;
-    statusBox.innerText = 'Initiating data transmission...';
-    progressContainer.style.display = 'block';
-    progressBar.style.width = '0%';
+    const fileId = `file_${Date.now()}`;
 
-    const formData = new FormData();
-    selectedFiles.forEach((file) => {
-        formData.append('files', file);
-    });
-    formData.append('format', targetFormat);
+    try {
+        const processedImages = [];
 
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/api/convert', true);
+        for (let fIdx = 0; fIdx < selectedFiles.length; fIdx++) {
+            const file = selectedFiles[fIdx];
+            const base64Str = await fileToBase64(file);
+            const totalChunks = Math.ceil(base64Str.length / CHUNK_SIZE);
 
-    // Track upload progress percentage
-    xhr.upload.onprogress = (e) => {
-        if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            progressBar.style.width = `${percentComplete}%`;
-            statusBox.innerText = `Uploading payload: ${percentComplete}%`;
+            statusBox.innerText = `Uploading file ${fIdx + 1}/${selectedFiles.length} in ${totalChunks} chunks to Vercel...`;
+
+            for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+                const chunk = base64Str.slice(chunkIdx * CHUNK_SIZE, (chunkIdx + 1) * CHUNK_SIZE);
+
+                const res = await fetch('/api/convert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'upload_chunk',
+                        fileId: `${fileId}_${fIdx}`,
+                        chunkIndex: chunkIdx,
+                        totalChunks: totalChunks,
+                        chunkData: chunk
+                    })
+                });
+
+                if (!res.ok) throw new Error(`Chunk ${chunkIdx + 1} transfer failed.`);
+            }
+
+            processedImages.push(`${fileId}_${fIdx}`);
         }
-    };
 
-    xhr.onload = () => {
-        if (xhr.status === 200) {
-            progressBar.style.width = '100%';
-            statusBox.innerText = 'Batch processing complete. Download initiated, sir.';
+        statusBox.innerText = 'Assembling chunks and converting on Vercel engine...';
 
-            const mimeType = xhr.getResponseHeader('X-MIME-Type') || 'application/octet-stream';
-            const link = document.createElement('a');
-            link.href = `data:${mimeType};base64,${xhr.responseText}`;
-            link.download = `converted_output.${targetFormat.toLowerCase()}`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } else {
-            statusBox.innerText = `Execution Error (${xhr.status}): ${xhr.responseText || 'Server payload error'}`;
-        }
-    };
+        const finalRes = await fetch('/api/convert', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'process',
+                fileIds: processedImages,
+                format: targetFormat
+            })
+        });
 
-    xhr.onerror = () => {
-        statusBox.innerText = 'Network error: Failed to reach the processing endpoint.';
-    };
+        if (!finalRes.ok) throw new Error('Vercel assembly/conversion failed.');
 
-    xhr.send(formData);
+        const result = await finalRes.json();
+        statusBox.innerText = 'Conversion complete. Initiating download, sir.';
+
+        const link = document.createElement('a');
+        link.href = result.downloadUrl;
+        link.download = `converted_result.${targetFormat}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+    } catch (err) {
+        statusBox.innerText = `Error: ${err.message}`;
+    }
 });
