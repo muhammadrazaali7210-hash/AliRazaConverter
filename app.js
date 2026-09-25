@@ -6,8 +6,7 @@ const formatSelect = document.getElementById('formatSelect');
 const statusBox = document.getElementById('status');
 
 let selectedFiles = [];
-// 1.5MB raw chunk size guarantees Base64 encoded payload stays well under 3MB (Vercel limit: 4.5MB)
-const CHUNK_SIZE = 1.5 * 1024 * 1024; 
+const CHUNK_SIZE = 1.5 * 1024 * 1024; // 1.5 MB chunks guarantee payloads stay well under Vercel's 4.5 MB limit
 
 dropZone.addEventListener('click', () => fileInput.click());
 
