@@ -6,8 +6,8 @@ const formatSelect = document.getElementById('formatSelect');
 const statusBox = document.getElementById('status');
 
 let selectedFiles = [];
-// 2.5MB chunks ensure Base64 string overhead stays strictly under Vercel's 4.5MB limit
-const CHUNK_SIZE = 2.5 * 1024 * 1024; 
+// 1.5MB raw chunk size guarantees Base64 encoded payload stays well under 3MB (Vercel limit: 4.5MB)
+const CHUNK_SIZE = 1.5 * 1024 * 1024; 
 
 dropZone.addEventListener('click', () => fileInput.click());
 
@@ -69,8 +69,8 @@ convertBtn.addEventListener('click', async () => {
                 });
 
                 if (!res.ok) {
-                    const errErr = await res.json();
-                    throw new Error(errErr.error || `Chunk upload failed on file ${fIdx + 1}`);
+                    const errData = await res.json();
+                    throw new Error(errData.error || `Chunk upload failed on file ${fIdx + 1}`);
                 }
             }
 
