@@ -1,4 +1,4 @@
-const sharp = require('sharp');
+const Jimp = require('jimp');
 const { PDFDocument } = require('pdf-lib');
 
 global.chunkStore = global.chunkStore || {};
@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
             for (const id of fileIds) {
                 const chunks = global.chunkStore[id];
                 if (!chunks) {
-                    return res.status(400).json({ error: 'Chunk buffer missing or expired from memory.' });
+                    return res.status(400).json({ error: 'Chunk buffer missing or expired.' });
                 }
 
                 const fullBase64 = chunks.join('');
@@ -37,10 +37,11 @@ module.exports = async (req, res) => {
                 const pdfDoc = await PDFDocument.create();
 
                 for (const imgBuffer of assembledBuffers) {
-                    const jpegBuffer = await sharp(imgBuffer).jpeg().toBuffer();
+                    const jimpImage = await Jimp.read(imgBuffer);
+                    const jpegBuffer = await jimpImage.getBufferAsync(Jimp.MIME_JPEG);
                     const image = await pdfDoc.embedJpg(jpegBuffer);
-                    const page = pdfDoc.addPage([image.width, image.height]);
-                    page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
+                    const page = pdfDoc.addPage([image.bitmap.width, image.bitmap.height]);
+                    page.drawImage(image, { x: 0, y: 0, width: image.bitmap.width, height: image.bitmap.height });
                 }
 
                 const pdfBytes = await pdfDoc.save();
@@ -48,18 +49,17 @@ module.exports = async (req, res) => {
                 return res.status(200).json({ downloadUrl: `data:application/pdf;base64,${resultBase64}` });
             } else {
                 const imgBuffer = assembledBuffers[0];
+                const jimpImage = await Jimp.read(imgBuffer);
                 let processedBuffer;
                 let mimeType = `image/${format}`;
 
                 if (format === 'png') {
-                    processedBuffer = await sharp(imgBuffer).png().toBuffer();
+                    processedBuffer = await jimpImage.getBufferAsync(Jimp.MIME_PNG);
                 } else if (format === 'jpg' || format === 'jpeg') {
-                    processedBuffer = await sharp(imgBuffer).jpeg().toBuffer();
+                    processedBuffer = await jimpImage.getBufferAsync(Jimp.MIME_JPEG);
                     mimeType = 'image/jpeg';
-                } else if (format === 'webp') {
-                    processedBuffer = await sharp(imgBuffer).webp().toBuffer();
                 } else if (format === 'bmp') {
-                    processedBuffer = await sharp(imgBuffer).toFormat('bmp').toBuffer();
+                    processedBuffer = await jimpImage.getBufferAsync(Jimp.MIME_BMP);
                 } else {
                     return res.status(400).json({ error: 'Unsupported format requested.' });
                 }

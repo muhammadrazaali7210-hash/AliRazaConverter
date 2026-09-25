@@ -1,0 +1,9 @@
+{
+  "name": "jarvis-converter",
+  "version": "1.0.0",
+  "main": "api/convert.js",
+  "dependencies": {
+    "jimp": "^0.22.10",
+    "pdf-lib": "^1.17.1"
+  }
+}
