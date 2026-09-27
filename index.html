@@ -3,38 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jarvis Quantum Core</title>
+    <title>Jarvis Media Core</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Client-side PDF processing engine -->
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 <body>
-    <div class="glow-bg"></div>
     <div class="container">
         <header>
-            <h1>JARVIS QUANTUM CORE</h1>
-            <p class="subtitle">High-Performance Dynamic Media Engine</p>
+            <h1>JARVIS MEDIA CORE</h1>
+            <p class="subtitle">Universal Universal Client-Side Conversion Engine</p>
         </header>
         
         <div class="drop-zone" id="dropZone">
-            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
-            <div class="upload-icon">⚡</div>
+            <input type="file" id="fileInput" multiple accept="*/*" style="display: none;">
+            <div class="upload-icon">📁</div>
             <p id="fileLabel">Drop files here or click to select batch</p>
         </div>
 
         <div class="controls">
-            <label for="formatSelect">TARGET TRANSLATION PROTOCOL</label>
+            <label for="formatSelect">SELECT TARGET OUTPUT FORMAT</label>
             <select id="formatSelect">
-                <option value="pdf">PDF (Document Compilation)</option>
-                <option value="png">PNG (Lossless Matrix Image)</option>
-                <option value="jpg">JPG / JPEG (Compressed Image)</option>
+                <optgroup label="Document Formats">
+                    <option value="pdf">PDF (Portable Document Format)</option>
+                    <option value="txt">TXT (Plain Text Extract)</option>
+                    <option value="html">HTML (Web Document)</option>
+                </optgroup>
+                <optgroup label="Raster Image Formats">
+                    <option value="png">PNG (Lossless Image)</option>
+                    <option value="jpg">JPG / JPEG (Standard Compressed)</option>
+                    <option value="webp">WEBP (Web Optimized)</option>
+                    <option value="bmp">BMP (Bitmap Standard)</option>
+                    <option value="gif">GIF (Graphics Interchange Format)</option>
+                </optgroup>
+                <optgroup label="Vector & Publishing">
+                    <option value="svg">SVG (Scalable Vector Output)</option>
+                </optgroup>
+                <optgroup label="Video & Motion (WASM Enabled)">
+                    <option value="mp4">MP4 (H.264 Video Container)</option>
+                    <option value="webm">WEBM (Web Video Stream)</option>
+                    <option value="gif_anim">Animated GIF Sequence</option>
+                </optgroup>
+                <optgroup label="Audio Formats">
+                    <option value="mp3">MP3 (MPEG Audio Layer III)</option>
+                    <option value="wav">WAV (Uncompressed Audio)</option>
+                    <option value="ogg">OGG (Vorbis Audio)</option>
+                </optgroup>
             </select>
 
-            <button id="convertBtn">Compile & Execute Batch</button>
+            <button id="convertBtn">Execute Universal Batch</button>
         </div>
 
         <div class="progress-container" id="progressContainer">
             <div class="progress-header">
-                <span id="statusText">System Standing By...</span>
+                <span id="statusText">System Ready.</span>
                 <span id="progressPercent">0%</span>
             </div>
             <div class="progress-track">
