@@ -8,9 +8,6 @@ const progressPercent = document.getElementById('progressPercent');
 const progressBar = document.getElementById('progressBar');
 
 let selectedFiles = [];
-// Thresholds in bytes
-const DIRECT_LIMIT = 3 * 1024 * 1024; // Files <= 3MB upload in 1 request
-const CHUNK_SIZE = 2 * 1024 * 1024;   // Files > 3MB split into 2MB chunks
 
 dropZone.addEventListener('click', () => fileInput.click());
 
@@ -33,12 +30,49 @@ function updateProgress(percent, text) {
     statusText.innerText = text;
 }
 
-function fileToBase64(file) {
+function readFileAsArrayBuffer(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
-        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function processImageAsync(file, targetFormat) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+            // Downscale dimensions slightly for ultra low-end RAM optimization if larger than 4K
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 2560;
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+            }
+
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            URL.revokeObjectURL(url); // Free memory immediately
+            const mimeType = targetFormat === 'png' ? 'image/png' : 'image/jpeg';
+            resolve(canvas.toDataURL(mimeType, 0.85));
+        };
+        img.onerror = (err) => {
+            URL.revokeObjectURL(url);
+            reject(err);
+        };
+        img.src = url;
     });
 }
 
@@ -49,93 +83,66 @@ convertBtn.addEventListener('click', async () => {
     }
 
     const targetFormat = formatSelect.value;
-    const batchSessionId = `batch_${Date.now()}`;
-    const processedFileIds = [];
     const totalFiles = selectedFiles.length;
 
     try {
-        // Phase 1: Uploading Files (0% - 70% Progress Range)
-        for (let fIdx = 0; fIdx < totalFiles; fIdx++) {
-            const file = selectedFiles[fIdx];
-            const base64Str = await fileToBase64(file);
-            const fileId = `${batchSessionId}_file_${fIdx}`;
+        if (targetFormat === 'pdf') {
+            const pdfDoc = await PDFLib.PDFDocument.create();
 
-            if (base64Str.length <= DIRECT_LIMIT) {
-                // Direct single upload for small files
-                const currentProgress = ((fIdx + 0.5) / totalFiles) * 70;
-                updateProgress(currentProgress, `Uploading file ${fIdx + 1}/${totalFiles}...`);
+            for (let i = 0; i < totalFiles; i++) {
+                const file = selectedFiles[i];
+                const progress = ((i + 1) / totalFiles) * 90;
+                updateProgress(progress, `Optimizing & Compiling ${i + 1}/${totalFiles}...`);
 
-                const res = await fetch('/api/convert', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'upload_chunk',
-                        fileId: fileId,
-                        chunkIndex: 0,
-                        totalChunks: 1,
-                        chunkData: base64Str
-                    })
+                // Convert image via lightweight async step to prevent freezing low-end hardware
+                const buffer = await readFileAsArrayBuffer(file);
+                let image;
+
+                if (file.type === 'image/png') {
+                    image = await pdfDoc.embedPng(buffer);
+                } else {
+                    image = await pdfDoc.embedJpg(buffer);
+                }
+
+                const page = pdfDoc.addPage([image.width, image.height]);
+                page.drawImage(image, {
+                    x: 0,
+                    y: 0,
+                    width: image.width,
+                    height: image.height,
                 });
 
-                if (!res.ok) throw new Error(`Upload failed on file ${fIdx + 1}`);
-            } else {
-                // Split into chunks for large files
-                const totalChunks = Math.ceil(base64Str.length / CHUNK_SIZE);
-
-                for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
-                    const progressVal = ((fIdx + (chunkIdx / totalChunks)) / totalFiles) * 70;
-                    updateProgress(progressVal, `Uploading file ${fIdx + 1}/${totalFiles} (Chunk ${chunkIdx + 1}/${totalChunks})...`);
-
-                    const chunkData = base64Str.slice(chunkIdx * CHUNK_SIZE, (chunkIdx + 1) * CHUNK_SIZE);
-
-                    const res = await fetch('/api/convert', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'upload_chunk',
-                            fileId: fileId,
-                            chunkIndex: chunkIdx,
-                            totalChunks: totalChunks,
-                            chunkData: chunkData
-                        })
-                    });
-
-                    if (!res.ok) throw new Error(`Chunk error on file ${fIdx + 1}`);
+                // Yield control to UI thread briefly every 3 files for low-end devices
+                if (i % 3 === 0) {
+                    await new Promise(r => setTimeout(r, 10));
                 }
             }
 
-            processedFileIds.push(fileId);
+            updateProgress(95, 'Finalizing PDF output...');
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'compiled_document.pdf';
+            link.click();
+
+        } else {
+            for (let i = 0; i < totalFiles; i++) {
+                const file = selectedFiles[i];
+                const progress = ((i + 1) / totalFiles) * 90;
+                updateProgress(progress, `Processing ${i + 1}/${totalFiles}...`);
+
+                const convertedDataUrl = await processImageAsync(file, targetFormat);
+                const link = document.createElement('a');
+                link.href = convertedDataUrl;
+                link.download = `converted_${i + 1}.${targetFormat}`;
+                link.click();
+
+                await new Promise(r => setTimeout(r, 10));
+            }
         }
 
-        // Phase 2: Processing (70% - 90% Progress Range)
-        updateProgress(80, 'Processing batch on Vercel engine...');
-
-        const finalRes = await fetch('/api/convert', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'process',
-                fileIds: processedFileIds,
-                format: targetFormat
-            })
-        });
-
-        if (!finalRes.ok) {
-            const errData = await finalRes.json();
-            throw new Error(errData.error || 'Server processing failed.');
-        }
-
-        const result = await finalRes.json();
-
-        // Phase 3: Downloading (100% Complete)
-        updateProgress(100, 'Compilation complete! Initiating download, sir...');
-
-        const link = document.createElement('a');
-        link.href = result.downloadUrl;
-        link.download = `converted_batch.${targetFormat === 'pdf' ? 'pdf' : targetFormat}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        updateProgress(100, 'Batch execution finished successfully, sir!');
 
     } catch (err) {
         updateProgress(0, `Error: ${err.message}`);
