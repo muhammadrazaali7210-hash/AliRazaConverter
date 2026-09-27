@@ -7,41 +7,42 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div class="glow-bg"></div>
     <div class="container">
-        <h1>JARVIS QUANTUM CORE</h1>
-        <p class="subtitle">Maximum Capacity Media Engine</p>
+        <header>
+            <h1>JARVIS QUANTUM CORE</h1>
+            <p class="subtitle">High-Performance Dynamic Media Engine</p>
+        </header>
         
         <div class="drop-zone" id="dropZone">
-            <input type="file" id="fileInput" multiple style="display: none;">
-            <p id="fileLabel">Drop files here or click to select</p>
+            <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+            <div class="upload-icon">⚡</div>
+            <p id="fileLabel">Drop files here or click to select batch</p>
         </div>
 
         <div class="controls">
-            <label for="formatSelect">SELECT TARGET BATCH TRANSLATION PROTOCOL</label>
+            <label for="formatSelect">TARGET TRANSLATION PROTOCOL</label>
             <select id="formatSelect">
-                <optgroup label="Image Formats">
-                    <option value="PNG">PNG (Lossless Matrix Image)</option>
-                    <option value="JPG">JPG / JPEG (Compressed Image)</option>
-                    <option value="WEBP">WEBP (Web Optimized Engine)</option>
-                    <option value="GIF">GIF (Graphics Interchange Format)</option>
-                    <option value="BMP">BMP (Bitmap Standard)</option>
-                    <option value="TIFF">TIFF (High Dynamic Range)</option>
-                    <option value="ICO">ICO (Icon Resource Asset)</option>
-                </optgroup>
-                <optgroup label="Document Formats">
-                    <option value="PDF">PDF (Document Compilation)</option>
-                </optgroup>
+                <option value="pdf">PDF (Document Compilation)</option>
+                <option value="png">PNG (Lossless Matrix Image)</option>
+                <option value="jpg">JPG / JPEG (Compressed Image)</option>
+                <option value="bmp">BMP (Bitmap Standard)</option>
             </select>
-
-            <div id="progressContainer" class="progress-container" style="display: none;">
-                <div id="progressBar" class="progress-bar"></div>
-            </div>
 
             <button id="convertBtn">Compile & Execute Batch</button>
         </div>
 
-        <div id="status" class="status-box">System Standing By, sir.</div>
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-header">
+                <span id="statusText">System Standing By...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
