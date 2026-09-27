@@ -25,7 +25,7 @@ module.exports = async (req, res) => {
             for (const id of fileIds) {
                 const chunks = global.chunkStore[id];
                 if (!chunks) {
-                    return res.status(400).json({ error: 'Chunk buffer missing or expired.' });
+                    return res.status(400).json({ error: 'Chunk buffer missing or expired from memory.' });
                 }
 
                 const fullBase64 = chunks.join('');
@@ -33,15 +33,18 @@ module.exports = async (req, res) => {
                 delete global.chunkStore[id];
             }
 
-            if (format === 'pdf') {
+            const targetFormat = format.toLowerCase();
+
+            if (targetFormat === 'pdf') {
                 const pdfDoc = await PDFDocument.create();
 
                 for (const imgBuffer of assembledBuffers) {
-                    const jimpImage = await Jimp.read(imgBuffer);
-                    const jpegBuffer = await jimpImage.getBufferAsync(Jimp.MIME_JPEG);
-                    const image = await pdfDoc.embedJpg(jpegBuffer);
-                    const page = pdfDoc.addPage([image.bitmap.width, image.bitmap.height]);
-                    page.drawImage(image, { x: 0, y: 0, width: image.bitmap.width, height: image.bitmap.height });
+                    const jimpImg = await Jimp.read(imgBuffer);
+                    const jpegBuf = await jimpImg.getBufferAsync(Jimp.MIME_JPEG);
+                    
+                    const image = await pdfDoc.embedJpg(jpegBuf);
+                    const page = pdfDoc.addPage([image.width, image.height]);
+                    page.drawImage(image, { x: 0, y: 0, width: image.width, height: image.height });
                 }
 
                 const pdfBytes = await pdfDoc.save();
@@ -49,19 +52,19 @@ module.exports = async (req, res) => {
                 return res.status(200).json({ downloadUrl: `data:application/pdf;base64,${resultBase64}` });
             } else {
                 const imgBuffer = assembledBuffers[0];
-                const jimpImage = await Jimp.read(imgBuffer);
+                const jimpImg = await Jimp.read(imgBuffer);
                 let processedBuffer;
-                let mimeType = `image/${format}`;
+                let mimeType = `image/${targetFormat}`;
 
-                if (format === 'png') {
-                    processedBuffer = await jimpImage.getBufferAsync(Jimp.MIME_PNG);
-                } else if (format === 'jpg' || format === 'jpeg') {
-                    processedBuffer = await jimpImage.getBufferAsync(Jimp.MIME_JPEG);
+                if (targetFormat === 'png') {
+                    processedBuffer = await jimpImg.getBufferAsync(Jimp.MIME_PNG);
+                } else if (targetFormat === 'jpg' || targetFormat === 'jpeg') {
+                    processedBuffer = await jimpImg.getBufferAsync(Jimp.MIME_JPEG);
                     mimeType = 'image/jpeg';
-                } else if (format === 'bmp') {
-                    processedBuffer = await jimpImage.getBufferAsync(Jimp.MIME_BMP);
+                } else if (targetFormat === 'bmp') {
+                    processedBuffer = await jimpImg.getBufferAsync(Jimp.MIME_BMP);
                 } else {
-                    return res.status(400).json({ error: 'Unsupported format requested.' });
+                    return res.status(400).json({ error: `Unsupported requested format: ${targetFormat}` });
                 }
 
                 const resultBase64 = processedBuffer.toString('base64');
